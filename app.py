@@ -30,7 +30,6 @@ def load_and_train():
     for path in paths_to_try:
         try:
             df = pd.read_csv(path)
-            st.sidebar.success(f"✓ Loaded data from: {path}")
             break
         except FileNotFoundError:
             continue
