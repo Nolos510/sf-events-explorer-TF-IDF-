@@ -393,39 +393,6 @@ def render_event_card(row, show_details=False):
 # Load model
 df, vectorizer, tfidf_matrix = load_and_train()
 
-# Sidebar
-with st.sidebar:
-    st.markdown("## 🤖 ML Model Info")
-    st.markdown(f"""
-    **Algorithm**: TF-IDF + Feature Boosting
-    
-    ---
-    
-    **📊 Training Stats**
-    - 📁 Events: **{len(df):,}**
-    - 📝 Vocabulary: **{len(vectorizer.vocabulary_):,}** terms
-    - 🔢 Features: **{tfidf_matrix.shape[1]:,}**
-    
-    ---
-    
-    **🔍 Query Features Detected**
-    - 👶 Age group (kids, teens, families)
-    - ⏰ Time of day
-    - 💵 Free/paid
-    - 📅 Weekend
-    
-    ---
-    
-    **⚙️ How It Works**
-    1. TF-IDF vectorizes your query
-    2. Cosine similarity finds matches
-    3. Feature extraction adds boosts
-    4. Results ranked by score
-    """)
-    
-    st.markdown("---")
-    st.markdown("*SFSU Data Science Project*")
-
 # Main content
 st.markdown('<h1 class="main-title">🎉 SF Events Explorer</h1>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">ML-Powered Event Discovery • 2,075 San Francisco Events</p>', unsafe_allow_html=True)
