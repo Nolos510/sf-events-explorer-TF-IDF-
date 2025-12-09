@@ -1,6 +1,4 @@
-"""
-SF Events Explorer - ML-Powered Event Discovery
-"""
+
 
 import streamlit as st
 import pandas as pd
