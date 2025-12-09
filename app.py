@@ -1,6 +1,5 @@
 """
 SF Events Explorer - ML-Powered Event Discovery
-Beautiful UI Version
 """
 
 import streamlit as st
@@ -11,202 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 
 # Page config
-st.set_page_config(
-    page_title="SF Events Explorer",
-    page_icon="🎉",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# ============================================================================
-# CUSTOM CSS FOR BETTER STYLING
-# ============================================================================
-st.markdown("""
-<style>
-    /* Main background */
-    .stApp {
-        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-    }
-    
-    /* Header styling */
-    .main-title {
-        font-size: 3rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-    }
-    
-    .subtitle {
-        color: #94a3b8;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-    
-    /* Event card styling */
-    .event-card {
-        background: linear-gradient(145deg, #1e293b, #334155);
-        border: 1px solid #475569;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .event-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 40px rgba(99, 102, 241, 0.15);
-        border-color: #6366f1;
-    }
-    
-    .event-title {
-        color: #f1f5f9;
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    
-    .event-meta {
-        color: #94a3b8;
-        font-size: 0.9rem;
-        margin-bottom: 0.75rem;
-    }
-    
-    .event-description {
-        color: #cbd5e1;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-    
-    /* Tags */
-    .tag {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .tag-category {
-        background: rgba(139, 92, 246, 0.2);
-        color: #a78bfa;
-        border: 1px solid rgba(139, 92, 246, 0.3);
-    }
-    
-    .tag-free {
-        background: rgba(16, 185, 129, 0.2);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    
-    .tag-paid {
-        background: rgba(100, 116, 139, 0.2);
-        color: #94a3b8;
-        border: 1px solid rgba(100, 116, 139, 0.3);
-    }
-    
-    .tag-match {
-        background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.3));
-        color: #c4b5fd;
-        border: 1px solid rgba(139, 92, 246, 0.4);
-    }
-    
-    /* Search box styling */
-    .stTextInput > div > div > input {
-        background-color: #1e293b !important;
-        color: #f1f5f9 !important;
-        border: 2px solid #475569 !important;
-        border-radius: 12px !important;
-        padding: 0.75rem 1rem !important;
-        font-size: 1rem !important;
-    }
-    
-    .stTextInput > div > div > input:focus {
-        border-color: #6366f1 !important;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
-    }
-    
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(90deg, #4f46e5, #7c3aed) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.5rem 1.25rem !important;
-        font-weight: 500 !important;
-        transition: all 0.2s !important;
-    }
-    
-    .stButton > button:hover {
-        background: linear-gradient(90deg, #6366f1, #8b5cf6) !important;
-        transform: translateY(-1px) !important;
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg, [data-testid="stSidebar"] {
-        background-color: #0f172a !important;
-    }
-    
-    [data-testid="stSidebar"] .stMarkdown {
-        color: #e2e8f0;
-    }
-    
-    /* Success message */
-    .stSuccess {
-        background-color: rgba(16, 185, 129, 0.1) !important;
-        border: 1px solid rgba(16, 185, 129, 0.3) !important;
-        color: #34d399 !important;
-    }
-    
-    /* Divider */
-    hr {
-        border-color: #334155 !important;
-    }
-    
-    /* Expander styling */
-    .streamlit-expanderHeader {
-        background-color: #1e293b !important;
-        border-radius: 8px !important;
-    }
-    
-    /* Select boxes */
-    .stSelectbox > div > div {
-        background-color: #1e293b !important;
-        border-color: #475569 !important;
-    }
-    
-    /* Info box */
-    .stInfo {
-        background-color: rgba(99, 102, 241, 0.1) !important;
-        border: 1px solid rgba(99, 102, 241, 0.3) !important;
-        color: #a5b4fc !important;
-    }
-    
-    /* Hide Streamlit branding */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    
-    /* Custom scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #1e293b;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #475569;
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-    }
-</style>
-""", unsafe_allow_html=True)
-
+st.set_page_config(page_title="SF Events Explorer", page_icon="🎉", layout="wide")
 
 # ============================================================================
 # ML MODEL
@@ -214,26 +18,36 @@ st.markdown("""
 @st.cache_resource
 def load_and_train():
     """Load data and train TF-IDF model."""
-    paths_to_try = ['events.csv', 'data/events.csv', './events.csv', './data/events.csv']
+    # Try multiple paths - including root level
+    paths_to_try = [
+        'events.csv',           # Root level (your current structure)
+        'data/events.csv',      # Standard structure
+        './events.csv',
+        './data/events.csv'
+    ]
     
     df = None
     for path in paths_to_try:
         try:
             df = pd.read_csv(path)
+            st.sidebar.success(f"✓ Loaded data from: {path}")
             break
         except FileNotFoundError:
             continue
     
     if df is None:
         st.error("❌ Could not find events.csv")
+        st.info("Make sure events.csv is in your repository")
         st.stop()
     
+    # Create search text
     df['search_text'] = (
         df['event_name'].fillna('') + ' ' +
         df['event_description'].fillna('') + ' ' +
         df['category'].fillna('')
     )
     
+    # Train TF-IDF
     vectorizer = TfidfVectorizer(
         max_features=3000,
         stop_words='english',
@@ -274,15 +88,18 @@ def extract_features(query):
 
 def search_events(query, df, vectorizer, tfidf_matrix, top_k=15):
     """Search for matching events using TF-IDF + feature boosting."""
+    # TF-IDF similarity
     query_vec = vectorizer.transform([query])
     scores = cosine_similarity(query_vec, tfidf_matrix).flatten()
     
+    # Feature extraction and boosting
     features = extract_features(query)
     boosts = np.zeros(len(df))
     
     for i in range(len(df)):
         row = df.iloc[i]
         
+        # Age boost
         if features.get('age'):
             ages = str(row.get('age_group_eligibility_tags', '')).lower()
             if features['age'] == 'kids' and ('child' in ages or 'pre-teen' in ages or 'toddler' in ages):
@@ -292,9 +109,11 @@ def search_events(query, df, vectorizer, tfidf_matrix, top_k=15):
             elif features['age'] == 'families' and ('famil' in ages or 'all' in ages):
                 boosts[i] += 0.15
         
+        # Free boost
         if features.get('free') and str(row.get('fee', '')).lower() != 'true':
             boosts[i] += 0.15
         
+        # Time boost
         if features.get('time'):
             try:
                 hour = int(str(row.get('start_time', '12:00')).split(':')[0])
@@ -307,11 +126,13 @@ def search_events(query, df, vectorizer, tfidf_matrix, top_k=15):
             except:
                 pass
         
+        # Weekend boost
         if features.get('weekend'):
             days = str(row.get('days_of_week', '')).lower()
             if 'sa' in days or 'su' in days:
                 boosts[i] += 0.1
     
+    # Combine scores
     final_scores = scores + boosts
     top_idx = np.argsort(final_scores)[::-1][:top_k]
     
@@ -332,63 +153,88 @@ def format_time(t):
         return str(t)
 
 
-def get_category_emoji(category):
-    """Get emoji for category."""
-    if pd.isna(category):
-        return "📌"
-    cat = str(category).lower()
-    if 'sport' in cat:
-        return "⚽"
-    elif 'art' in cat or 'culture' in cat:
-        return "🎨"
-    elif 'education' in cat:
-        return "📚"
-    elif 'family' in cat:
-        return "👨‍👩‍👧‍👦"
-    elif 'health' in cat:
-        return "💪"
-    return "📌"
-
-
-def render_event_card(row, show_details=False):
-    """Render an event card with custom HTML."""
-    is_free = str(row.get('fee', '')).lower() != 'true'
-    score_pct = int(min(row.get('score', 0) * 100, 99))
-    category = str(row.get('category', 'Event')).split(',')[0] if pd.notna(row.get('category')) else 'Event'
-    emoji = get_category_emoji(row.get('category'))
-    
-    # Build tags HTML
-    tags_html = f"""
-        <span class="tag tag-category">{emoji} {category}</span>
-        <span class="tag {'tag-free' if is_free else 'tag-paid'}">{'🆓 Free' if is_free else '💰 Paid'}</span>
-        <span class="tag tag-match">🎯 {score_pct}% match</span>
-    """
-    
-    # Event meta info
-    neighborhood = row.get('analysis_neighborhood', 'San Francisco')
-    time_str = format_time(row.get('start_time'))
-    age_group = str(row.get('age_group_eligibility_tags', 'All Ages')).split(';')[0].strip()
-    
-    card_html = f"""
-    <div class="event-card">
-        <div style="margin-bottom: 0.75rem;">
-            {tags_html}
-        </div>
-        <div class="event-title">{row.get('event_name', 'Untitled Event')}</div>
-        <div class="event-meta">
-            📍 {neighborhood} &nbsp;•&nbsp; 🕐 {time_str} &nbsp;•&nbsp; 👥 {age_group}
-        </div>
-        <div class="event-description">
-            {str(row.get('event_description', ''))[:200]}...
-        </div>
-    </div>
-    """
-    return card_html
-
-
 # ============================================================================
 # APP UI
 # ============================================================================
+st.title("🎉 SF Events Explorer")
+st.caption("ML-Powered Event Discovery • San Francisco")
+
+# Load model
+with st.spinner("🔄 Training ML model..."):
+    df, vectorizer, tfidf_matrix = load_and_train()
+
+st.success(f"✅ Model ready! Trained on **{len(df):,} events** with **{len(vectorizer.vocabulary_):,} vocabulary terms**")
+
+st.markdown("---")
+
+# Search
+query = st.text_input("🔍 What are you looking for?", placeholder="e.g., outdoor activities for kids")
+
+# Sample queries
+cols = st.columns(5)
+samples = ["Fun for kids", "Free events", "Art classes", "Morning activities", "Weekend family"]
+for i, s in enumerate(samples):
+    if cols[i].button(s, key=f"s{i}"):
+        query = s
+
+# Filters
+with st.expander("🎛️ Filters"):
+    fcols = st.columns(3)
+    cat_filter = fcols[0].selectbox("Category", ["All"] + sorted(df['category'].dropna().unique().tolist()))
+    hood_filter = fcols[1].selectbox("Neighborhood", ["All"] + sorted(df['analysis_neighborhood'].dropna().unique().tolist()))
+    free_filter = fcols[2].checkbox("Free only")
+
+st.markdown("---")
+
+# Results
+if query:
+    results = search_events(query, df, vectorizer, tfidf_matrix)
+    
+    # Apply filters
+    if cat_filter != "All":
+        results = results[results['category'].str.contains(cat_filter, na=False)]
+    if hood_filter != "All":
+        results = results[results['analysis_neighborhood'] == hood_filter]
+    if free_filter:
+        results = results[results['fee'].astype(str).str.lower() != 'true']
+    
+    st.subheader(f"Found {len(results)} events")
+    
+    for _, row in results.iterrows():
+        is_free = str(row.get('fee', '')).lower() != 'true'
+        score_pct = int(min(row['score'] * 100, 99))
+        
+        with st.container():
+            st.markdown(f"### {row['event_name']}")
+            st.caption(f"📍 {row.get('analysis_neighborhood', 'SF')} • 🕐 {format_time(row.get('start_time'))} • {'🆓 Free' if is_free else '💰 Paid'} • 🎯 {score_pct}% match")
+        
+            with st.expander("View details"):
+                st.write(row.get('event_description', 'No description'))
+                st.markdown(f"""
+                - **Location**: {row.get('site_location_name', 'TBD')}
+                - **Address**: {row.get('site_address', 'N/A')}
+                - **Date**: {str(row.get('event_start_date', 'TBD')).split()[0]}
+                - **Time**: {format_time(row.get('start_time'))} - {format_time(row.get('end_time'))}
+                - **Ages**: {row.get('age_group_eligibility_tags', 'All Ages')}
+                """)
+                
+                bcols = st.columns(2)
+                addr = row.get('site_address', '')
+                if addr and pd.notna(addr):
+                    bcols[0].link_button("🗺️ Directions", f"https://www.google.com/maps/search/?api=1&query={addr} San Francisco")
+                info = row.get('more_info', '')
+                if info and pd.notna(info):
+                    url = info if str(info).startswith('http') else f"https://{info}"
+                    bcols[1].link_button("🔗 More Info", url)
+            
+            st.divider()
+
+else:
+    st.info("👆 Enter a search query to find events!")
+    st.subheader("🌟 Sample Events")
+    for _, row in df.sample(min(5, len(df))).iterrows():
+        is_free = str(row.get('fee', '')).lower() != 'true'
+        st.markdown(f"**{row['event_name']}** — {row.get('analysis_neighborhood', 'SF')} {'🆓' if is_free else ''}")
 
 # Sidebar
 with st.sidebar:
@@ -419,114 +265,3 @@ with st.sidebar:
     
     st.markdown("---")
     st.caption("SFSU Data Science Project")
-
-# Load model
-df, vectorizer, tfidf_matrix = load_and_train()
-
-# Main content
-st.markdown('<h1 class="main-title">🎉 SF Events Explorer</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">ML-Powered Event Discovery • 2,075 San Francisco Events</p>', unsafe_allow_html=True)
-
-# Success message
-st.success(f"✅ Model trained on **{len(df):,} events** with **{len(vectorizer.vocabulary_):,}** vocabulary terms")
-
-st.markdown("---")
-
-# Search section
-st.markdown("### 🔍 What are you looking for?")
-query = st.text_input("Search", placeholder="e.g., outdoor activities for kids, free concerts, art classes...", label_visibility="collapsed")
-
-# Sample query buttons
-st.markdown("**Quick searches:**")
-cols = st.columns(5)
-samples = ["🧒 Fun for kids", "🆓 Free events", "🎨 Art classes", "🌅 Morning activities", "👨‍👩‍👧 Weekend family"]
-sample_queries = ["Fun for kids", "Free events", "Art classes", "Morning activities", "Weekend family"]
-
-for i, (label, sq) in enumerate(zip(samples, sample_queries)):
-    if cols[i].button(label, key=f"sample_{i}", use_container_width=True):
-        query = sq
-
-# Filters section
-st.markdown("---")
-with st.expander("🎛️ **Advanced Filters**", expanded=False):
-    fcols = st.columns(3)
-    with fcols[0]:
-        categories = ["All Categories"] + sorted(df['category'].dropna().unique().tolist())
-        cat_filter = st.selectbox("Category", categories)
-    with fcols[1]:
-        neighborhoods = ["All Neighborhoods"] + sorted(df['analysis_neighborhood'].dropna().unique().tolist())
-        hood_filter = st.selectbox("Neighborhood", neighborhoods)
-    with fcols[2]:
-        free_filter = st.checkbox("🆓 Free events only")
-
-st.markdown("---")
-
-# Results section
-if query:
-    with st.spinner("🔍 Searching..."):
-        results = search_events(query, df, vectorizer, tfidf_matrix)
-    
-    # Apply filters
-    if cat_filter != "All Categories":
-        results = results[results['category'].str.contains(cat_filter, na=False)]
-    if hood_filter != "All Neighborhoods":
-        results = results[results['analysis_neighborhood'] == hood_filter]
-    if free_filter:
-        results = results[results['fee'].astype(str).str.lower() != 'true']
-    
-    st.markdown(f"### Found **{len(results)}** events")
-    
-    if len(results) == 0:
-        st.warning("No events found. Try different keywords or adjust filters.")
-    else:
-        # Display results in a grid
-        for idx, (_, row) in enumerate(results.iterrows()):
-            st.markdown(render_event_card(row), unsafe_allow_html=True)
-            
-            # Details in columns (cleaner than expander)
-            with st.expander(f"📋 View details for: {row['event_name'][:50]}..."):
-                dcols = st.columns(2)
-                with dcols[0]:
-                    st.markdown(f"**🏢 Organization:** {row.get('org_name', 'N/A')}")
-                    st.markdown(f"**📍 Location:** {row.get('site_location_name', 'TBD')}")
-                    st.markdown(f"**🗺️ Address:** {row.get('site_address', 'N/A')}")
-                    st.markdown(f"**🏘️ Neighborhood:** {row.get('analysis_neighborhood', 'SF')}")
-                with dcols[1]:
-                    st.markdown(f"**📅 Date:** {str(row.get('event_start_date', 'TBD')).split()[0]}")
-                    st.markdown(f"**🕐 Time:** {format_time(row.get('start_time'))} - {format_time(row.get('end_time'))}")
-                    st.markdown(f"**👥 Ages:** {row.get('age_group_eligibility_tags', 'All Ages')}")
-                    st.markdown(f"**📞 Phone:** {row.get('site_phone', 'N/A')}")
-                
-                st.markdown("**📝 Full Description:**")
-                st.write(row.get('event_description', 'No description available.'))
-                
-                # Action buttons
-                bcols = st.columns(2)
-                addr = row.get('site_address', '')
-                if addr and pd.notna(addr):
-                    bcols[0].link_button("🗺️ Get Directions", f"https://www.google.com/maps/search/?api=1&query={addr} San Francisco")
-                info = row.get('more_info', '')
-                if info and pd.notna(info):
-                    url = info if str(info).startswith('http') else f"https://{info}"
-                    bcols[1].link_button("🔗 More Info", url)
-
-else:
-    # Landing state - show featured events
-    st.markdown("### 🌟 Featured Events")
-    st.markdown("*Enter a search query above to find events, or browse some featured picks:*")
-    
-    # Show random sample
-    sample_events = df.sample(min(6, len(df)))
-    for _, row in sample_events.iterrows():
-        is_free = str(row.get('fee', '')).lower() != 'true'
-        category = str(row.get('category', '')).split(',')[0] if pd.notna(row.get('category')) else 'Event'
-        emoji = get_category_emoji(row.get('category'))
-        
-        st.markdown(f"""
-        <div class="event-card">
-            <span class="tag tag-category">{emoji} {category}</span>
-            <span class="tag {'tag-free' if is_free else 'tag-paid'}">{'🆓 Free' if is_free else '💰 Paid'}</span>
-            <div class="event-title">{row['event_name']}</div>
-            <div class="event-meta">📍 {row.get('analysis_neighborhood', 'SF')}</div>
-        </div>
-        """, unsafe_allow_html=True)
