@@ -390,6 +390,36 @@ def render_event_card(row, show_details=False):
 # APP UI
 # ============================================================================
 
+# Sidebar
+with st.sidebar:
+    st.markdown("### 🤖 ML Model Info")
+    st.markdown(f"""
+    **Algorithm**: TF-IDF + Feature Boosting
+    
+    **Training Stats**:
+    - Events: {len(df):,}
+    - Vocabulary: {len(vectorizer.vocabulary_):,} terms
+    - Features: {tfidf_matrix.shape[1]:,}
+    
+    **Query Features Detected**:
+    - Age group (kids, teens, families)
+    - Time of day
+    - Free/paid
+    - Weekend
+    """)
+    
+    st.markdown("---")
+    st.markdown("### 📊 How It Works")
+    st.markdown("""
+    1. **TF-IDF** vectorizes query
+    2. **Cosine similarity** scores events  
+    3. **Feature extraction** boosts matches
+    4. **Ranking** returns top results
+    """)
+    
+    st.markdown("---")
+    st.caption("SFSU Data Science Project")
+
 # Load model
 df, vectorizer, tfidf_matrix = load_and_train()
 
