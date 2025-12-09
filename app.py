@@ -160,8 +160,6 @@ st.caption("ML-Powered Event Discovery • San Francisco")
 with st.spinner("🔄 Training ML model..."):
     df, vectorizer, tfidf_matrix = load_and_train()
 
-st.success(f"✅ Model ready! Trained on **{len(df):,} events** with **{len(vectorizer.vocabulary_):,} vocabulary terms**")
-
 st.markdown("---")
 
 # Search
