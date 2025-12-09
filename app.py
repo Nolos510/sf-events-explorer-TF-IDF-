@@ -153,17 +153,17 @@ def format_time(t):
 # ============================================================================
 # APP UI
 # ============================================================================
-st.title("🎉 SF Events Explorer")
+st.title("SF Events Explorer")
 st.caption("ML-Powered Event Discovery • San Francisco")
 
 # Load model
-with st.spinner("🔄 Training ML model..."):
+with st.spinner("Training ML model..."):
     df, vectorizer, tfidf_matrix = load_and_train()
 
 st.markdown("---")
 
 # Search
-query = st.text_input("🔍 What are you looking for?", placeholder="e.g., outdoor activities for kids")
+query = st.text_input("What are you looking for?", placeholder="e.g., outdoor activities for kids")
 
 # Sample queries
 cols = st.columns(5)
@@ -173,7 +173,7 @@ for i, s in enumerate(samples):
         query = s
 
 # Filters
-with st.expander("🎛️ Filters"):
+with st.expander("Filters"):
     fcols = st.columns(3)
     cat_filter = fcols[0].selectbox("Category", ["All"] + sorted(df['category'].dropna().unique().tolist()))
     hood_filter = fcols[1].selectbox("Neighborhood", ["All"] + sorted(df['analysis_neighborhood'].dropna().unique().tolist()))
@@ -201,7 +201,7 @@ if query:
         
         with st.container():
             st.markdown(f"### {row['event_name']}")
-            st.caption(f"📍 {row.get('analysis_neighborhood', 'SF')} • 🕐 {format_time(row.get('start_time'))} • {'🆓 Free' if is_free else '💰 Paid'} • 🎯 {score_pct}% match")
+            st.caption(f"📍 {row.get('analysis_neighborhood', 'SF')} • 🕐 {format_time(row.get('start_time'))} • {'Free' if is_free else 'Paid'} • 🎯 {score_pct}% match")
         
             with st.expander("View details"):
                 st.write(row.get('event_description', 'No description'))
@@ -225,8 +225,8 @@ if query:
             st.divider()
 
 else:
-    st.info("👆 Enter a search query to find events!")
-    st.subheader("🌟 Sample Events")
+    st.info("Enter a search query to find events!")
+    st.subheader("Sample Events")
     for _, row in df.sample(min(5, len(df))).iterrows():
         is_free = str(row.get('fee', '')).lower() != 'true'
         st.markdown(f"**{row['event_name']}** — {row.get('analysis_neighborhood', 'SF')} {'🆓' if is_free else ''}")
