@@ -1,0 +1,95 @@
+# File to track our strategic decisions for the project.
+
+# Decision 0001 — Dataset Intake: Our415
+Context: Needed time-bound events with SF coverage.
+Decision: Adopt for MVP.
+Mapping: name,start/end,venue,price,category,lat/lon → events.csv schema.
+License: DataSF (cite on README).
+Revisit: Quarterly.
+
+# Decision 0002 — Relevance Gate
+Only datasets scoring ≥70 on the gate enter the pipeline for MVP.
+
+Score each proposed dataset 0–100. Only ingest if ≥ 70.
+
+Criterion						Points	Pass bar
+========================================================================================
+Has time-bound events or stable activities with hours	30	Required
+Location (lat/lon or address)	    			20	Required
+Price or price band					15	Nice-to-have (else infer)
+Age restriction (explicit or derivable)			10	Nice-to-have
+License allows academic/local use			10	Required
+SF coverage + recent (≤12 months or evergreen)		10	Strongly preferred
+Machine-readable (CSV/API/ICS)				 5	Preferred
+
+Examples:
+
+Our415 events → ~85 (good).
+
+Eventbrite/Ticketmaster API → 80–90 (good).
+
+City Survey → ~30 (demographics only, no events/prices/hours) → reject for MVP.
+
+Film locations → ~40 (fun, not useful for itineraries) → reject now.
+
+# Decision 0003 - Team Roles
+
+Product / PM — Nhi (scope + acceptance)
+* Owns problem statement, personas, success metrics, and milestone scope.
+* Maintains backlog, runs standups, writes submissions (proposal/progress/final).
+* Decides dataset intake via the Relevance Gate; keeps Decision Log in README.
+* Done = sprint goal + DOD written, metrics/UX acceptance checked, submission packaged.
+
+Data — JD (ingest + schema)
+* Sources/cleans datasets; enforces licenses; builds events.csv/venues.csv.
+* Geocodes, fixes time fields, price bands, age_min; builds data dictionary.
+* Versioning (CSV/Parquet) and EDA notebook.
+* Done = validated tables (see QC below) + dictionary + EDA pushed.
+
+Modeling — Charley (algorithms + evaluation)
+* Implements filters, scoring, greedy itinerary, diversity rules.
+* Defines/owns offline metrics (budget/age compliance, diversity, latency; optional P@k).
+* Reproducible experiments + unit tests.
+* Done = recommend() + build_itinerary() pass tests, metrics reported for 2 personas.
+
+Prototype / MLOps — Carlo (demo + glue)
+* Builds Streamlit (or Flask) UI; integrates model; logs latency.
+* Exposes simple API wrapper; packaging (environment.yml), README run steps.
+* Optional export (CSV/ICS) and screenshots.
+* Done = form → ranked list → editable itinerary with budget/time bars; screenshots saved.
+
+# Decision 0004 - Handoffs (contracts)
+
+Data → Model (JD → Charley)
+* Files: data/seed/events.csv, data/seed/venues.csv
+* Required columns:
+	* event_id,name,categories,start_time,end_time,venue_id,min_price,max_price,age_min,lat,lon,neighborhood,source
+	* venues.csv: venue_id,name,address,neighborhood,lat,lon,hours
+* QC thresholds:
+	* ≥300 events; ≤5% nulls on start_time/end_time/lat/lon; age_min filled (default 0 if unknown); prices present or banded.
+
+Model → Prototype (Charley → Carlo)
+* Python API:
+	def recommend(prefs: dict) -> list[dict]:
+	    # returns ranked events with fields: event_id,name,score,start,end,price,age_min,lat,lon,neighborhood,why
+	def build_itinerary(events: list[dict], user: dict) -> dict:
+	    # returns {items:[{event_id,start,end,travel_min,price}], totals:{time_min, price}}
+* Include why explanations (e.g., “category match + close + in budget”) for UI.
+
+PM checkpoints (Nhi)
+* Accepts JD’s data only if QC passes and Relevance Gate ≥70.
+* Accepts model/UI only if DOD met and metrics printed in report.
+
+# Decision 0005 - RACI (or, who's doing what on key tasks)
+Task				Nhi (PM)	JD (Data)	Charley (Model)	Carlo (Proto)
+Personas & metrics		A/R		C		C		C
+Dataset intake (Relevance Gate)	A/R		R		C		I
+Data cleaning & dictionary	I		A/R		C		I
+Geocoding/time normalization	I		A/R		C		I
+Recommender & itinerary		I		C		A/R		C
+Metrics & tests			I		C		A/R		C
+UI & integration		I		C		C		A/R
+Submissions (report/slides)	A/R		C		C		C
+	LEGEND: A = Approver, R = Responsible, C = Consulted, I = Informed	
+
+# Decision 0006 - 
