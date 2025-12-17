@@ -2,7 +2,7 @@
 
 **ML-Powered Event Discovery for San Francisco**
 
-A Streamlit app that uses TF-IDF machine learning to match natural language queries to 2,075 SF events.
+A Streamlit app that uses TF-IDF machine learning to match natural language queries to 2,075 in our SF events dataset.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.31-red.svg)
@@ -10,9 +10,8 @@ A Streamlit app that uses TF-IDF machine learning to match natural language quer
 
 ## Live Demo
 
-**[Your Streamlit Cloud URL will be here]**
-
----
+(https://sfeventexplorer574.streamlit.app/)
+-
 
 ## The ML Model
 
@@ -128,4 +127,4 @@ App will be live at:
 
 ---
 
-SFSU Data Science Project • San Francisco Events Discovery
+SFSU Info Systems Project • San Francisco Events Discovery
