@@ -1,0 +1,50 @@
+## 🧩 Linear Regression Summary – Our415 Event Distribution
+
+### 🎯 Objective
+This model analyzes how **event counts** across San Francisco’s **supervisorial districts** vary by **event category** using a Linear Regression approach.  
+Each district’s data was modeled separately to capture localized community engagement patterns.
+
+---
+
+### ⚙️ Method Summary
+1. **Data Preparation** – Converted `supervisor_district` to integer and standardized column names.  
+2. **Aggregation** – Counted events per `District × Category` to create the `event_count` target variable.  
+3. **Feature Encoding** – Used one-hot encoding for categorical variables.  
+4. **Model Training** – Applied `LinearRegression()` with a 60/20/20 train-validation-test split (`random_state=2`).  
+5. **Evaluation Metric** – Computed RMSE (Root Mean Squared Error) for validation and test sets.  
+6. **District Loop** – Repeated training steps for each of the 11 districts to evaluate local model performance.
+
+---
+
+### 📊 Results Overview
+| District | Validation RMSE | Test RMSE | Interpretation |
+|-----------|----------------:|-----------:|----------------|
+| 1 | 73.38 | 9.33 | High variance in validation but stable test – may need more samples. |
+| 2 | 23.00 | 12.02 | Predictable event distribution; good generalization. |
+| 3 | 19.00 | 25.62 | Moderate accuracy; some category imbalance. |
+| 4 | 17.00 | 15.00 | Strong fit; well-distributed categories. |
+| 5 | 63.24 | 1.43 | Large difference between splits – potential overfitting. |
+| 6 | 5.00 | 2.55 | Excellent model fit; consistent results. |
+| 7 | 1.00 | 32.69 | Unstable across splits; may need category cleanup. |
+| 8 | 26.00 | 133.52 | Outlier district with highly variable events. |
+| 9 | 57.00 | 37.36 | High variance; mixed event categories. |
+| 10 | 60.00 | 26.73 | Moderate accuracy; some overestimation. |
+| 11 | 17.00 | 12.08 | Strong generalization and low error. |
+
+**Average Validation RMSE:** ~34  
+**Average Test RMSE:** ~28  
+
+---
+
+### 🧠 Insights
+- Districts **6** and **11** show the most consistent and accurate event predictions.  
+- High RMSE values (e.g., Districts 1, 8, 9) suggest uneven or sparse event-category distributions.  
+- The Linear Regression model performs well in districts with balanced event data and clear category patterns.  
+- Event categories like *Education* and *Arts, Culture & Identity* likely contribute most to total event counts.
+
+---
+
+### 🔍 Next Steps
+- Clean multi-labeled categories (e.g., `"Arts, Culture & Identity, Family Support" → "Arts, Culture & Identity"`).  
+- Add temporal variables (`month`, `season`) for future trend analysis.  
+- Visualize RMSE results and actual vs predicted counts for final report presentation.
