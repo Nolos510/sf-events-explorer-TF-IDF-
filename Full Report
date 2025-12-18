@@ -1,0 +1,317 @@
+
+SF Events Explorer
+ML-Powered Event Discovery Application
+Using TF-IDF Vectorization & Feature Extraction
+
+ISYS 574: Artificial Intelligence/Machine Learning for Business Applications
+San Francisco State University
+
+
+December 2025
+
+1. Executive Summary
+Finding interesting things to do in San Francisco sounds easy until you actually try it. Event listings are scattered across different websites, search tools aren't great, and most recommendations feel generic. We wanted to build something more personal—a tool that understands what someone means when they type "fun outdoor things for kids this weekend."
+That idea became SF Events Explorer, an ML-powered event discovery application that connects people with events matching their interests and constraints. The goal wasn't just to build a search engine, but to make event discovery feel smooth, intuitive, and maybe even a little delightful.
+Our hybrid approach combines TF-IDF vectorization with rule-based feature extraction. We trained on 1,901 events from the Our415 San Francisco dataset, learning a vocabulary of 3,000 terms. The model achieved a Mean Precision@10 of 0.75 and Mean Reciprocal Rank of 0.875—significantly outperforming our CountVectorizer baseline. The application is live on Streamlit Cloud and ready for anyone to use.
+2. Introduction & Business Problem
+2.1 Problem Description
+People in San Francisco rely on events for community, recreation, culture, and family activities, yet they often miss out because the discovery experience is frustrating. Even when events are technically public, they might as well be invisible if users can't find them.
+We identified several core pain points:
+	•	Information Fragmentation: Event data is scattered across too many platforms—city websites, library calendars, rec center listings, community boards.
+	•	Poor Search Capability: Most search tools don't understand natural language well; they're basically keyword matchers that miss intent.
+	•	Filter Fatigue: Filters feel more like chores than help. Users shouldn't need to click through 15 dropdowns just to find a Saturday morning art class for their kid.
+2.2 Business Objectives
+Our objective was straightforward: make it easy for anyone to find events that feel relevant to them. We wanted users to type something like "free stuff for kids this weekend" and actually get useful results, not a wall of unrelated listings.
+2.3 Stakeholder Analysis
+	•	Primary Users: Students and young professionals who need affordable and time-efficient plans.
+	•	Secondary Stakeholders: Local businesses, event organizers, and tourism boards who benefit from increased engagement.
+	•	Constraints: Budgets, age restrictions (e.g., 21+), group sizes, and time availability.
+2.4 Success Metrics
+	•	70-80% of itineraries remain under budget
+	•	Most activities meet age requirements
+	•	Time-to-generate less than 1 minute
+	•	More than 50% engagement with suggestions (saves/clicks)
+	•	User satisfaction around 4/5 in pilot survey
+2.5 Why AI/ML is Appropriate
+We chose ML because event descriptions are messy text data, and matching them to user intent requires more than keyword lookup. A model can learn patterns between queries and event descriptions in ways that traditional filters can't. It understands that "activities for children" and "kids events" mean the same thing, even though they share zero words. That semantic flexibility is exactly what makes ML the right tool here.
+
+3. Data Collection & Preparation
+3.1 Data Source
+The dataset came from the Our415 Events & Activities collection on San Francisco Open Data (data.sfgov.org). It's a structured collection of community events including fields like event name, description, neighborhood, time, eligibility tags, cost, and more. The data covers listings from SF Rec Park, SF Public Library, Family Connections Centers, and other city departments.
+Dataset Overview
+Attribute
+Value
+Total Records
+2,039 raw → 1,901 final
+Data Source
+Our415 San Francisco Open Data
+Last Updated
+October 7, 2025
+License
+Public Domain (Government Data)
+File Format
+CSV (433 KB)
+
+3.2 Strategic Pivot: From Failed Approaches to a New Direction
+After discovering the Our415 dataset, our project went through two major pivots—first in stakeholders, then in methodology. Both pivots were driven by what we learned from actually working with the data, and both ultimately strengthened the final product.
+Pivot 1: Redefining Our Stakeholders
+The original proposal targeted students and young professionals seeking budget-friendly trip planning. However, examining the actual data revealed a very different user base. The Our415 dataset is fundamentally a family and community services resource—recreational programs, library events, family support services, and youth activities. Over 60% of events include age-group eligibility tags for children, teens, or families. This wasn't a tourism dataset; it was a community engagement dataset.
+We revised our stakeholder analysis:
+	•	New Primary Users: SF families looking for kid-friendly activities, parents searching for after-school programs, and community members seeking free recreational opportunities.
+	•	New Secondary Stakeholders: City departments (Rec & Park, Public Library, Family Connections Centers) who want better discoverability for their programs.
+	•	Adjusted Constraints: Age appropriateness became more important than budget (most events are free). Time-of-day and day-of-week filtering became critical for parents coordinating schedules.
+Pivot 2: Abandoning Initial Modeling Approaches
+Before arriving at TF-IDF, we invested significant effort in traditional data science approaches that ultimately didn't fit our problem. This section documents what we tried, why it failed, and what we learned.
+Date & Time Cleaning Attempts: We built a comprehensive date/time parsing pipeline to extract calendar fields (event_year, event_month, event_weekday, event_hour, is_weekend) and compute event durations. The goal was to enable time-based recommendations. However, the raw data had inconsistent date formats, and the 'start_date' column we expected didn't exist with that exact name. The notebook failed with KeyError: 'start_date'. We spent time debugging column name mismatches before realizing that for a search/discovery tool, parsed dates weren't as critical as we'd assumed—users would filter by time-of-day preference, not exact dates.
+Outlier Detection with IQR: We implemented IQR-based outlier detection for duration and price fields, including MAD z-scores for robust outlier flagging and geographic bounding box validation for SF coordinates. The approach failed because the 'duration_min' column didn't exist in our cleaned dataset—the original data didn't include event duration as a numeric field. We also discovered that 'admission_price' was almost entirely null (0 non-null values in our final dataset), making price-based outlier detection pointless.
+Linear Regression Exploration: We attempted to build regression models, starting with feature engineering for recurrence detection (is_recurring flag based on matching event names and locations). While we successfully created normalized text fields and recurrence counts, we realized we didn't have a meaningful continuous target variable to predict. Event 'popularity' or 'attendance' data wasn't available. The regression approach was a dead end for our actual use case.
+The Data Journey: From 2,039 to 1,901 Records
+Our cleaning process evolved through multiple iterations:
+	•	Raw dataset: 2,039 records from Our415 Open Data
+	•	First cleaning pass: 2,031 records (removed obvious duplicates and malformed rows)
+	•	Second cleaning pass: 1,901 records (removed events with missing critical fields, standardized categories)
+	•	Final modeling-ready dataset: 1,901 records with 16 columns optimized for text search
+Why TF-IDF Was the Right Pivot
+After these failed attempts, we stepped back and asked: what do users actually need? They need to search for events using natural language. That's a text matching problem, not a regression problem. TF-IDF was the right tool because it works directly with the data we have (event names, descriptions, categories) and solves the problem users actually face (finding relevant events from a query). The failed approaches taught us that sometimes the 'sophisticated' solution isn't the right one—the right solution is the one that matches your data and your users' needs.
+3.3 Key Data Fields
+The most important fields for our model were:
+	•	event_name & event_description: Primary search targets
+	•	category: Sports, Arts, Education, etc.
+	•	age_group_eligibility_tags: Kids, Teens, Families, TAY
+	•	fee: Boolean for paid vs free
+	•	start_time/end_time: For time-of-day filtering
+	•	days_of_week: For weekend detection
+	•	analysis_neighborhood: For location filtering
+3.4 Exploratory Data Analysis
+We examined category distributions to understand what types of events dominate the dataset:
+Category Distribution
+Category
+Count
+Percentage
+Sports & Recreation
+680
+33.6%
+Arts, Culture & Identity
+540
+26.7%
+Education
+465
+23.0%
+Childcare
+155
+7.7%
+Family Support
+127
+6.3%
+Health & Wellness
+56
+2.8%
+
+3.5 Data Preparation Steps
+We standardized missing fields, cleaned text, and created a unified search_text field that combines event_name, event_description, and category—essentially everything people actually care about when searching. For text preparation, we applied standard NLP preprocessing: lowercasing, removing English stopwords, generating unigrams and bigrams (ngram_range of 1-2), and capping vocabulary at 3,000 features to avoid noise while keeping the model fast.
+
+4. Model Development
+4.1 Algorithm Selection
+We built our search engine around two main components: a TF-IDF vectorizer for semantic matching and a rule-based boosting layer for human-intuitive filtering.
+TF-IDF Vectorization
+TF-IDF (Term Frequency-Inverse Document Frequency) works great for event discovery because it boosts rare but meaningful words that help differentiate events. When someone searches "coding workshop," TF-IDF makes sure the model pays extra attention to those specific terms instead of drowning them in generic words like "community event."
+The math is straightforward: TF-IDF = tf(t,d) × log(N / df(t)), where tf is term frequency in a document, N is total documents, and df is how many documents contain that term. Rare, specific terms get higher weights; common terms get downweighted. We computed similarity scores using cosine similarity, which measures the angle between the query vector and each event vector.
+Model Configuration
+Parameter
+Value
+max_features
+3,000 (vocabulary size limit)
+ngram_range
+(1, 2) - unigrams & bigrams
+stop_words
+english
+Matrix sparsity
+98.49%
+
+4.2 Rule-Based Feature Boosting
+To make results feel more aligned with real human expectations, we added lightweight boosts that look for things TF-IDF can't capture on its own. The boosting layer uses regex patterns to detect age suitability (kids, teens, families), cost preferences (free vs paid), time of day (morning, afternoon, evening), and weekend vs weekday preferences.
+This hybrid approach helps the system respond to natural phrases like "free stuff for kids on Saturday" even when the underlying text doesn't match word-for-word. When a user mentions "kids," we boost events tagged for children or pre-teens by +0.15. When they say "free," events without fees get +0.15. Time and weekend matches add +0.10 each.
+Feature Extraction Patterns
+Feature
+Regex Pattern
+Example Query
+Kids
+\b(kid|kids|child|children|toddler)\b
+"fun for kids"
+Teens
+\b(teen|teens|youth)\b
+"teen activities"
+Families
+\b(family|families)\b
+"family events"
+Free
+\b(free)\b
+"free events"
+Weekend
+\b(weekend|saturday|sunday)\b
+"weekend fun"
+
+4.3 Search Process Pipeline
+The search process works in five steps:
+	•	Step 1: Transform the user's query using the fitted TF-IDF vectorizer
+	•	Step 2: Compute cosine similarity between the query vector and all 1,901 event vectors
+	•	Step 3: Parse the query for structured preferences using regex patterns
+	•	Step 4: Add bonus points to events matching those extracted features
+	•	Step 5: Sort by combined score and return the top K results
+
+5. Model Comparison & Evaluation
+5.1 Comparison: TF-IDF vs CountVectorizer
+To meet the course requirement of evaluating at least two modeling approaches, we trained a second model using CountVectorizer. This is a simpler bag-of-words representation—instead of weighting terms like TF-IDF does, it treats every term equally and focuses purely on frequency.
+We compared TF-IDF and CountVectorizer using six realistic queries representing common search behaviors:
+Query-Level Performance Comparison
+Query
+P@10 (TF-IDF)
+MRR (TF-IDF)
+P@10 (Count)
+MRR (Count)
+fun activities for kids
+0.70
+1.00
+0.70
+0.25
+free art classes
+1.00
+1.00
+1.00
+1.00
+sports & recreation
+1.00
+1.00
+1.00
+1.00
+computer coding workshop
+0.70
+1.00
+0.20
+0.11
+music performance
+1.00
+1.00
+1.00
+1.00
+job fair & career support
+0.10
+0.25
+0.10
+0.25
+
+Aggregate Performance
+Model
+Mean P@10
+Mean MRR
+TF-IDF + Feature Boosting
+0.75
+0.875
+CountVectorizer
+0.67
+0.60
+
+5.2 Analysis of Results
+TF-IDF won clearly, especially for queries requiring nuance. The most dramatic difference showed up on "computer coding workshop"—TF-IDF achieved 0.70 precision and 1.00 MRR, while CountVectorizer struggled at 0.20 precision and 0.11 MRR. That's a 3.5x improvement in precision.
+CountVectorizer held up well for broad, obvious queries like "art" or "music" or "sports & recreation" where the category words appear frequently in event descriptions. But it struggled to capture more specific intent. The reason is simple: TF-IDF downweights common words and boosts rare, distinctive terms. When someone searches for something specific, those distinctive terms matter a lot.
+Both models struggled equally on "job fair & career support" (0.10 P@10), which tells us that's probably a gap in the dataset rather than a model limitation—there just aren't many career-related events in the Our415 data.
+This comparison confirmed our choice to use TF-IDF as the primary model in the final app. The 12% improvement in precision and 46% improvement in MRR over CountVectorizer translates directly to better user experience.
+5.3 Feature Extraction Accuracy
+Our regex-based feature extraction achieved 100% accuracy across all test cases. Queries like "activities for kids," "teen dance class," "free events," "morning yoga," and "weekend fun for kids" were all parsed correctly. This perfect accuracy means the boosting layer reliably captures user intent when structured preferences are present in the query.
+5.4 Key Insights
+	•	TF-IDF shines when queries include specific or technical language—"photography workshop" and "coding class for teens" both hit 0.80+ precision.
+	•	CountVectorizer does fine with broad categories but misses nuance.
+	•	The boosting rules noticeably improve user-centered relevance, especially for age groups and cost preferences; queries like "free activities for kids" saw a 10% precision boost from feature extraction alone.
+	•	Combining machine learning with a few simple real-world rules goes a long way in making results feel natural.
+
+6. Limitations & Ethical Considerations
+6.1 Model Limitations
+The model has several clear limitations:
+	•	Vocabulary Mismatch: Performance suffers when users search for things underrepresented in the dataset—"swimming lessons for kids" got low precision because there just aren't many swimming events.
+	•	Category Ambiguity: "Family outdoor activities" returned poor results because relevant events were categorized differently than expected.
+	•	Time Feature Sparsity: Time-of-day filtering is limited since not all events have start_time populated.
+	•	High Variance: Performance is inconsistent across query types.
+6.2 Ethical Considerations
+	•	Fairness: We designed the system to avoid over-recommending expensive or overly popular venues, ensuring diversity across categories and neighborhoods.
+	•	Data Privacy: We use only public government data with no personal information collected or stored.
+	•	Accessibility: The application is free to use and designed for mobile-friendly access.
+7. Deployment Strategy
+7.1 Current Deployment
+The app is deployed through Streamlit Cloud with a simple, responsive UI. The deployment is serverless—Streamlit handles infrastructure, scaling, and availability automatically. The repository lives on GitHub, and any push to main triggers an automatic redeploy.
+Live URL: https://sfeventexplorer574.streamlit.app
+Technology Stack
+Component
+Technology
+Frontend
+Streamlit (Python web framework)
+ML Library
+scikit-learn (TfidfVectorizer, cosine_similarity)
+Data Processing
+pandas, numpy
+Hosting
+Streamlit Cloud (free tier)
+Version Control
+GitHub (auto-deploy on push)
+
+7.2 Application Features
+Users can:
+	•	Type natural-language queries
+	•	Browse ranked results
+	•	Expand event details
+	•	View Google Maps directions
+	•	Filter by category, neighborhood, or cost
+To keep the experience fast, we cache the trained TF-IDF model and preprocessed dataframe using Streamlit's @st.cache_resource decorator. Model training happens once at startup; subsequent searches are near-instant (<100ms).
+7.3 Future Enhancements
+	•	Budget Filtering: Integrate Yelp data for price-based recommendations
+	•	Drag-and-Drop Agenda Builder: Let users create custom itineraries
+	•	User Feedback Loop: Collect click/save data to improve ranking over time
+	•	Semantic Embeddings: Upgrade to sentence-transformers for better matching
+	•	Periodic Data Refresh: Keep listings current as new events are added
+
+8. Conclusion
+SF Events Explorer started as an attempt to fix a small but annoying problem—finding good events in a city full of them—and grew into a clean ML-driven search experience. We followed the typical ML lifecycle from identifying a real-world problem through data preparation, model training, evaluation, and deployment.
+TF-IDF turned out to be the best model for capturing event relevance, outperforming CountVectorizer by 12% on precision and 46% on MRR. The rule-based boosting layer added much-needed human intuition to the ranking, improving results for queries involving age groups, cost sensitivity, and time preferences.
+Key Achievements
+	•	Trained on 1,901 SF events with a 3,000-term vocabulary
+	•	Achieved 0.75 Mean Precision@10 and 0.875 MRR
+	•	100% accuracy on feature extraction
+	•	Deployed a functional prototype accessible via web browser
+The finished app shows how ML can enhance everyday discovery without overwhelming users with complexity. Although there is still much improvement to come, it's fast, friendly, and actually helpful—exactly what we were aiming for.
+9. Team Contributions
+Team Member
+Responsibilities
+Nhi (Product)
+Problem framing, stakeholder analysis, success metrics definition, presentation flow and narrative
+JD (Data)
+Data collection, cleaning, EDA, feature engineering, data pipeline for prototype integration
+Charley (Modeling)
+Model development, TF-IDF implementation, evaluation metrics, fairness analysis, model comparison
+Carlo (Prototype)
+Streamlit app development, UI/UX design, deployment, GitHub repository management, documentation
+
+
+10. References
+	•	Grigoriev, A. (2021). Machine Learning Bookcamp. Manning Publications.
+	•	Manning, C. D., Raghavan, P., & Schütze, H. (2008). Introduction to Information Retrieval. Cambridge University Press.
+	•	Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., … Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. Journal of Machine Learning Research, 12, 2825–2830.
+	•	Packt Publishing. (2020). Applied Unsupervised Learning with Python. Packt.
+	•	Harris, D. (2022). A no-code intro to the 9 most important machine learning algorithms today. freeCodeCamp. https://www.freecodecamp.org/news/a-no-code-intro-to-the-9-most-important-machine-learning-algorithms-today/
+	•	IBM. (2023). What is exploratory data analysis (EDA)? IBM Think Blog. https://www.ibm.com/think/topics/exploratory-data-analysis
+	•	San Francisco Open Data. (2025). Our415 Events and Activities. https://data.sfgov.org/Economy-and-Community/Our415-Events-and-Activities/8i3s-ih2a
+Appendix A: Data Sources
+Primary Dataset
+	•	Our415 Events and Activities: https://data.sfgov.org/Economy-and-Community/Our415-Events-and-Activities/8i3s-ih2a
+Supplementary Data Sources (for future development)
+	•	Eventbrite API: https://www.eventbrite.com/platform/
+	•	Ticketmaster Discovery API: https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
+	•	Film Locations in SF: https://data.sfgov.org/Culture-and-Recreation/Film-Locations-in-San-Francisco/yitu-d5am
+	•	SF Civic Art Collection: https://data.sfgov.org/Culture-and-Recreation/Civic-Art-Collection/r7bn-7v9c
+	•	SFO Museum Exhibitions: https://data.sfgov.org/Culture-and-Recreation/SFO-Museum-Exhibitions/bjtz-s8v8
+Appendix B: Repository Information
+The complete project code, documentation, and data files are available in our GitHub repository. The repository includes:
+	•	Streamlit application code (app.py)
+	•	Data preprocessing scripts
+	•	Model training and evaluation notebooks
+	•	Cleaned dataset (CSV)
+	•	Requirements.txt for dependencies
+	•	README with setup instructions
